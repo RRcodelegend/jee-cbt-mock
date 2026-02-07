@@ -1,0 +1,12 @@
+export const metadata = {
+  title: "JEE CBT Mock Test",
+  description: "Practice JEE-style CBT mock tests using your own PDFs"
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  );
+}

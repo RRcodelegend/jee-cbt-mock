@@ -1,0 +1,14 @@
+export default function Privacy() {
+  return (
+    div style={{ padding 20 }}
+      h1Privacy Policyh1
+      p
+        This platform allows users to upload their own exam PDFs for practice.
+        We do not claim ownership of uploaded content.
+      p
+      p
+        Cookies and advertisements may be used for monetization.
+      p
+    div
+  );
+}

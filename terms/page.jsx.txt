@@ -1,0 +1,11 @@
+export default function Terms() {
+  return (
+    <div style={{ padding: 20 }}>
+      <h1>Terms & Conditions</h1>
+      <p>
+        This website is for exam practice only. Users are responsible for the
+        content they upload.
+      </p>
+    </div>
+  );
+}
