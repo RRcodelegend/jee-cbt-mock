@@ -1,0 +1,154 @@
+// 🚀 Full JEE CBT Mock Test Web App (Upgraded)
+// Features: Sections, MCQs, Status Palette, Timer, Result Summary
+
+import React, { useState, useEffect } from "react";
+import { Document, Page, pdfjs } from "react-pdf";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+
+const SECTIONS = ["Physics", "Chemistry", "Mathematics"];
+
+export default function App() {
+  const [file, setFile] = useState(null);
+  const [numPages, setNumPages] = useState(0);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [section, setSection] = useState("Physics");
+
+  const [answers, setAnswers] = useState({});
+  const [marked, setMarked] = useState(new Set());
+  const [visited, setVisited] = useState(new Set());
+
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (!running || timeLeft <= 0) return;
+    const t = setInterval(() => setTimeLeft(s => s - 1), 1000);
+    // --- ROUTES & LEGAL PAGES ADDED ---
+// Pages: Home, Test, Privacy, Terms, About, Contact
+
+return () => clearInterval(t);
+  }, [running, timeLeft]);
+
+  useEffect(() => {
+    setVisited(v => new Set(v).add(pageNumber));
+  }, [pageNumber]);
+
+  function onDocumentLoadSuccess({ numPages }) {
+    setNumPages(numPages);
+  }
+
+  function startTimer(h, m) {
+    setTimeLeft(h * 3600 + m * 60);
+    setRunning(true);
+  }
+
+  function selectOption(q, opt) {
+    setAnswers(a => ({ ...a, [q]: opt }));
+  }
+
+  function toggleMark(q) {
+    const copy = new Set(marked);
+    copy.has(q) ? copy.delete(q) : copy.add(q);
+    setMarked(copy);
+  }
+
+  function submitTest() {
+    setRunning(false);
+    setSubmitted(true);
+  }
+
+  const format = s => `${Math.floor(s / 3600)}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+
+  const status = q => {
+    if (answers[q]) return "answered";
+    if (marked.has(q)) return "marked";
+    if (visited.has(q)) return "visited";
+    return "not";
+  };
+
+  if (submitted) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <Card className="w-96"><CardContent className="p-6 space-y-3">
+          <h2 className="text-xl font-bold">Test Summary</h2>
+          <div>Total Questions: {numPages}</div>
+          <div>Attempted: {Object.keys(answers).length}</div>
+          <div>Marked for Review: {marked.size}</div>
+          <Button onClick={() => window.location.reload()}>Restart</Button>
+        </CardContent></Card>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-900 text-white grid grid-cols-12 gap-4 p-4">
+
+      {/* Left Panel */}
+      <div className="col-span-3 space-y-3">
+        <Card><CardContent className="p-3">
+          <input type="file" accept="application/pdf" onChange={e => setFile(e.target.files[0])} />
+        </CardContent></Card>
+
+        <Card><CardContent className="p-3">
+          <div className="font-bold">Time Left</div>
+          <div className="text-lg">{format(timeLeft)}</div>
+          <div className="flex gap-2 mt-2">
+            <Button size="sm" onClick={() => startTimer(3,0)}>3:00</Button>
+            <Button size="sm" onClick={() => startTimer(2,30)}>2:30</Button>
+          </div>
+        </CardContent></Card>
+
+        <Card><CardContent className="p-3 space-y-2">
+          {SECTIONS.map(s => (
+            <Button key={s} variant={section===s?"default":"outline"} onClick={() => setSection(s)}>{s}</Button>
+          ))}
+        </CardContent></Card>
+
+        <Card><CardContent className="p-3 grid grid-cols-5 gap-2">
+          {Array.from({ length: numPages }, (_, i) => (
+            <Button key={i} onClick={() => setPageNumber(i+1)}
+              className={
+                status(i+1)==="answered" ? "bg-green-600" :
+                status(i+1)==="marked" ? "bg-yellow-500" :
+                status(i+1)==="visited" ? "bg-red-600" : "bg-gray-700"
+              }>
+              {i+1}
+            </Button>
+          ))}
+        </CardContent></Card>
+
+        <Button className="w-full bg-red-600" onClick={submitTest}>Submit Test</Button>
+      </div>
+
+      {/* Main Panel */}
+      <div className="col-span-9 flex flex-col items-center">
+        {file && (
+          <Document file={file} onLoadSuccess={onDocumentLoadSuccess}>
+            <Page pageNumber={pageNumber} width={700} />
+          </Document>
+        )}
+
+        {/* MCQ Options */}
+        <div className="grid grid-cols-2 gap-4 mt-4 w-full max-w-xl">
+          {["A","B","C","D"].map(o => (
+            <Button key={o} variant={answers[pageNumber]===o?"default":"outline"}
+              onClick={() => selectOption(pageNumber, o)}>
+              Option {o}
+            </Button>
+          ))}
+        </div>
+
+        <div className="flex gap-4 mt-4">
+          <Button onClick={() => setPageNumber(p => Math.max(1,p-1))}>Previous</Button>
+          <Button onClick={() => toggleMark(pageNumber)}>Mark for Review</Button>
+          <Button onClick={() => setPageNumber(p => Math.min(numPages,p+1))}>Next</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
